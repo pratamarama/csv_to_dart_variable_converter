@@ -38,6 +38,54 @@ class _MyHomePageState extends State<MyHomePage> {
     final List<List<dynamic>> rowsAsListOfValues =
         const CsvToListConverter().convert(input);
     String dartCode = "";
+    if (rowsAsListOfValues.isEmpty) {
+      print("csv is empty or cant be read.");
+      return;
+    }
+
+    if (rowsAsListOfValues.length == 1) {
+      dartCode = generateTranslationWithQuote(rowsAsListOfValues);
+    } else {
+      dartCode = generateTranslationWithoutQuote(rowsAsListOfValues);
+    }
+
+    log(dartCode);
+  }
+
+  String generateTranslationWithQuote(List<List<dynamic>> rowsAsListOfValues) {
+    String dartCode = "";
+    List<String> data = <String>[];
+    for (var v in rowsAsListOfValues[0]) {
+      data.add(v);
+    }
+
+    for (var i = 0; i < data.length; i += 1) {
+      String element = data[i];
+      final String variableName = ReCase(element[0]).camelCase;
+      // print("ini $element");
+      if (element[1].contains("{}")) {
+        final paramCount = (element[1]).split("{}").length - 1;
+        final List<String> paramDeclaration = [];
+        final List<String> params = [];
+        for (var i = 0; i < paramCount; i++) {
+          final paramName = "param$i";
+          paramDeclaration.add("String $paramName");
+          params.add(paramName);
+        }
+        dartCode +=
+            "\nstatic String $variableName(${paramDeclaration.join(",")}) { return \"${element[0]}\".tr(args: [${params.join(",")}]); } \n";
+      } else {
+        dartCode +=
+            "static final String $variableName = \"${element[0]}\".tr(); \n";
+      }
+    }
+
+    return dartCode;
+  }
+
+  String generateTranslationWithoutQuote(
+      List<List<dynamic>> rowsAsListOfValues) {
+    String dartCode = "";
     for (var element in rowsAsListOfValues) {
       final String variableName = ReCase(element[0]).camelCase;
       if (element[1].contains("{}")) {
@@ -56,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
             "static final String $variableName = \"${element[0]}\".tr(); \n";
       }
     }
-    log(dartCode);
+    return dartCode;
   }
 
   @override
